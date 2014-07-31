@@ -6,3 +6,7 @@ core = 7.x
 dependencies[] = locale
 
 files[] = language_fallback.fallback.inc
+files[] = views/views_handler_filter_locale_language_with_fallback.inc
+files[] = views/views_handler_sort_fallback_chain.inc
+
+configure = admin/config/regional/language_fallback
