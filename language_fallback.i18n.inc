@@ -12,6 +12,68 @@ function language_fallback_i18n_string_info_alter(&$object_info) {
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function language_fallback_form_i18n_string_translate_page_overview_form_alter(&$form, &$form_state) {
+  $strings = $form_state['build_info']['args'][1];
+  $source_langcode = variable_get_value('i18n_string_source_language');
+  $languages = language_list();
+  foreach ($form['languages']['#rows'] as $langcode => &$row) {
+    if ($langcode != $source_langcode) {
+      foreach ($strings as $string_object) {
+        if ($string_object->get_translation($langcode)) {
+          $fallback_langcode = _language_fallback_get_i18n_string_translation_fallback_langcode($string_object, $langcode);
+          if ($fallback_langcode !== NULL) {
+            $row['status'] = t('fallback from @language', array('@language' => $languages[$fallback_langcode]->name));
+          }
+          break;
+        }
+      }
+    }
+  }
+  unset($row);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function language_fallback_form_i18n_string_translate_page_form_alter(&$form, &$form_state) {
+  $languages = language_list();
+  foreach ($form['string_groups']['#value'] as $group_key => $strings) {
+    foreach ($strings as $string_object) {
+      $fallback_langcode = _language_fallback_get_i18n_string_translation_fallback_langcode($string_object, $form['langcode']['#value']);
+      if ($fallback_langcode !== NULL) {
+        $name = $string_object->get_name();
+        $form['strings'][$group_key][$name]['#description'] .= t('The @language fallback is currently used for this string.', array('@language' => $languages[$fallback_langcode]->name));
+      }
+    }
+  }
+}
+
+/**
+ * Returns fallback language code if fallback is used.
+ *
+ * @param i18n_string_object $string_object
+ * @param string $langcode
+ *
+ * @return string|null
+ */
+function _language_fallback_get_i18n_string_translation_fallback_langcode($string_object, $langcode) {
+  $class = i18n_string_group_info($string_object->textgroup, 'class', 'i18n_string_textgroup_default');
+  $group_object = new $class($string_object->textgroup);
+  if ($group_object instanceof language_fallback_i18n_string_textgroup_default) {
+    $show_language =& drupal_static('language_fallback_i18n_show_language');
+    $show_language = TRUE;
+    $translation = $group_object->load_translation($string_object, $langcode);
+    drupal_static_reset('language_fallback_i18n_show_language');
+    if ($translation && $translation->language != $langcode) {
+      return $translation->language;
+    }
+  }
+  return NULL;
+}
+
+/**
  * Extends the default i18n string textgroup class providing language fallback.
  *
  * The overridden methods contain a bit modified code of the original methods.
@@ -41,6 +103,13 @@ class language_fallback_i18n_string_textgroup_default extends i18n_string_textgr
       $query->condition('s.context', $i18nstring->context);
     }
     $query->fields('t', array('translation', 'i18n_status'));
+    if (drupal_static('language_fallback_i18n_show_language')) {
+      $query->addField('t', 'language');
+    }
+    // The i18n module can save empty strings as translations. In this case, it
+    // behaves as there is no translation and uses the original strings.
+    // Handle this case by simple excluding of empty translations.
+    $query->condition('t.translation', '', '<>');
     // Pass all language chain instead of one given language.
     $query->condition('t.language', $langcodes, 'IN');
     // Sort results according to the language chain order.
@@ -91,6 +160,10 @@ class language_fallback_i18n_string_textgroup_default extends i18n_string_textgr
         $query->condition('s.' . $field, $value);
       }
     }
+    // The i18n module can save empty strings as translations. In this case, it
+    // behaves as there is no translation and uses the original strings.
+    // Handle this case by simple excluding of empty translations.
+    $query->condition('t.translation', '', '<>');
     // Sort results according to the language chain order.
     $order = '(CASE ';
     foreach ($conditions['language'] as $index => $lang) {
