@@ -106,6 +106,10 @@ class language_fallback_i18n_string_textgroup_default extends i18n_string_textgr
     if (drupal_static('language_fallback_i18n_show_language')) {
       $query->addField('t', 'language');
     }
+    // The i18n module can save empty strings as translations. In this case, it
+    // behaves as there is no translation and uses the original strings.
+    // Handle this case by simple excluding of empty translations.
+    $query->condition('t.translation', '', '<>');
     // Pass all language chain instead of one given language.
     $query->condition('t.language', $langcodes, 'IN');
     // Sort results according to the language chain order.
@@ -156,6 +160,10 @@ class language_fallback_i18n_string_textgroup_default extends i18n_string_textgr
         $query->condition('s.' . $field, $value);
       }
     }
+    // The i18n module can save empty strings as translations. In this case, it
+    // behaves as there is no translation and uses the original strings.
+    // Handle this case by simple excluding of empty translations.
+    $query->condition('t.translation', '', '<>');
     // Sort results according to the language chain order.
     $order = '(CASE ';
     foreach ($conditions['language'] as $index => $lang) {
