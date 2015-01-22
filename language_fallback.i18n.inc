@@ -44,7 +44,7 @@ function language_fallback_form_i18n_string_translate_page_form_alter(&$form, &$
       $fallback_langcode = _language_fallback_get_i18n_string_translation_fallback_langcode($string_object, $form['langcode']['#value']);
       if ($fallback_langcode !== NULL) {
         $name = $string_object->get_name();
-        $form['strings'][$group_key][$name]['#description'] .= t('The @language fallback is currently used for this string.', array('@language' => $languages[$fallback_langcode]->name));
+        $form['strings'][$group_key][$name]['#description'] .= t('The @language fallback is currently used for this string. If you save this string, a new one will be created and the fallback not used anymore.', array('@language' => $languages[$fallback_langcode]->name));
       }
     }
   }
