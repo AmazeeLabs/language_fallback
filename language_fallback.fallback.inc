@@ -33,7 +33,7 @@ class localeWithFallback implements ArrayAccess {
   /**
    * Implements ArrayAccess::offsetGet().
    */
-  public function &offsetGet($offset) {
+  public function offsetGet($offset) {
     if (!isset($this->cache[$offset]) || (!$this->initialized && function_exists('language_fallback_get_chain'))) {
       /**
        * Fallback chains are red and cached with the first call to offsetGet() function.
