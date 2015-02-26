@@ -8,6 +8,9 @@ function language_fallback_i18n_string_info_alter(&$object_info) {
     if (!isset($info['class']) || $info['class'] == 'i18n_string_textgroup_default') {
       $info['class'] = 'language_fallback_i18n_string_textgroup_default';
     }
+    elseif ($info['class'] == 'i18n_string_textgroup_cached') {
+      $info['class'] = 'language_fallback_i18n_string_textgroup_cached';
+    }
   }
 }
 
@@ -179,5 +182,97 @@ class language_fallback_i18n_string_textgroup_default extends i18n_string_textgr
       ->fields('main')
       ->groupBy('main.lid');
     return $this->multiple_translation_build($main_query->execute()->fetchAll(), $langcode);
+  }
+}
+
+/**
+ * This is a temporary solution for the i18n_string_textgroup_cached.
+ *
+ * The i18n_string_textgroup_cached class extends i18n_string_textgroup_default
+ * class, but we want it to extend the
+ * language_fallback_i18n_string_textgroup_default class. And this is not
+ * possible to change this at runtime. So, this class is just a copy of the
+ * i18n_string_textgroup_cached with the parent class replaced to ours.
+ *
+ * @todo: find a better solution.
+ */
+class language_fallback_i18n_string_textgroup_cached extends language_fallback_i18n_string_textgroup_default {
+  public $caching_time = CACHE_TEMPORARY;
+  public function __construct($textgroup) {
+    parent::__construct($textgroup);
+    foreach (array('cache_multiple', 'strings') as $caches_type) {
+      if (($cache = cache_get('i18n:string:tgroup:' . $this->textgroup . ':' . $caches_type)) && !empty($cache->data)) {
+        $this->{$caches_type} = $cache->data;
+      }
+    }
+  }
+  public function __destruct() {
+    $this->strings = array_filter($this->strings);
+    $strings_to_cache = array();
+    $cache_data = array();
+    foreach ($this->strings as $context => $i18n_string_object) {
+      $cache_data[$context] = $context;
+      $strings_to_cache[$context] = $i18n_string_object;
+    }
+    cache_set('i18n:string:tgroup:' . $this->textgroup . ':strings', $cache_data, 'cache', $this->caching_time);
+    $cache_data = array();
+    foreach ($this->cache_multiple as $pattern => $strings) {
+      foreach ($strings as $context => $i18n_string_object) {
+        $cache_data[$pattern][$context] = $context;
+        $strings_to_cache[$context] = $i18n_string_object;
+      }
+    }
+    cache_set('i18n:string:tgroup:' . $this->textgroup . ':cache_multiple', $cache_data, 'cache', $this->caching_time);
+    foreach ($strings_to_cache as $i18n_string_object) {
+      if (is_object($i18n_string_object)) {
+        cache_set($i18n_string_object->get_cid(), get_object_vars($i18n_string_object), 'cache', $this->caching_time);
+      }
+    }
+  }
+  public function cache_reset() {
+    cache_clear_all('i18n:string:tgroup:' . $this->textgroup , 'cache', TRUE);
+    cache_clear_all('i18n:string:obj:', 'cache', TRUE);
+    return parent::cache_reset();
+  }
+  protected function cache_get($context) {
+    if (isset($this->strings[$context])) {
+      if (is_string($this->strings[$context])) {
+        $i8n_string_object = new i18n_string_object(array('textgroup' => $this->textgroup));
+        $i8n_string_object->set_context($context);
+        $this->strings[$context] = $i8n_string_object;
+      }
+      return parent::cache_get($context);
+    }
+    return NULL;
+  }
+  protected function multiple_cache_get($context) {
+    $cache_key = implode(':', $context);
+    if (isset($this->cache_multiple[$cache_key])) {
+      foreach ($this->cache_multiple[$cache_key] as $cached_context) {
+        if (is_string($cached_context)) {
+          $i8n_string_object = new i18n_string_object(array('textgroup' => $this->textgroup));
+          $i8n_string_object->set_context($cached_context);
+          $this->cache_multiple[$cache_key][$cached_context] = $i8n_string_object;
+        }
+      }
+    }
+    else {
+      foreach ($context as $key => $value) {
+        if ($value != '*') {
+          $try = array_merge($context, array($key => '*'));
+          return $this->multiple_cache_get($try);
+        }
+      }
+    }
+    return parent::multiple_cache_get($context);
+  }
+
+  public function string_update($i18nstring, $options = array()) {
+    cache_clear_all($i18nstring->get_cid(), 'cache', TRUE);
+    return parent::string_update($i18nstring, $options);
+  }
+  public function string_remove($i18nstring, $options = array()) {
+    cache_clear_all($i18nstring->get_cid(), 'cache', TRUE);
+    return parent::string_remove($i18nstring, $options);
   }
 }
