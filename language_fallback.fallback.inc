@@ -147,6 +147,14 @@ class localeContextWithFallback implements ArrayAccess {
    * Implements ArrayAccess::offsetExists().
    */
   public function offsetExists($offset) {
+    // Disable fallback while running setUp() for tests. The fallback objects get
+    // cached inside t() function, but the variable gets cleaned. If the variable
+    // is missing we should disable the fallback functionality
+    // @todo: reset this object when variable gets deleted?
+    if (variable_get('locale_custom_strings_' . $this->first_language, array()) === array()) {
+      return false;
+    }
+
     if (function_exists('locale')) {
       $locale_t = &drupal_static('locale');
       $translation = locale($offset, $this->context, $this->first_language);
