@@ -89,7 +89,7 @@ function language_fallback_language_fallback_candidates_alter(array &$fallback_c
 function language_fallback_get_chain($lang, $country = FALSE, $strict = FALSE) {
 
   if (!$strict) {
-    /* User defined fallabck always takes precedence before any other fallback
+    /* User defined fallback always takes precedence before any other fallback
      * But we can't use it on administration pages!
      */
     $user_chain = language_fallback_get_user_chain();
@@ -109,7 +109,7 @@ function language_fallback_get_chain($lang, $country = FALSE, $strict = FALSE) {
     $country = language_fallback_get_country();
   }
 
-  // Check cache - maybe the chain was already loaded
+  // Check cache - maybe the chain was already loaded.
   if (!isset($chains[$lang][$country])) {
 
     $chain = db_select('language_fallback', 'f')
@@ -120,11 +120,12 @@ function language_fallback_get_chain($lang, $country = FALSE, $strict = FALSE) {
         ->fetchField();
 
     if ($chain) {
-      // We have a fallback chain for this country
-      $chains[$lang][$country] = explode("|", $chain); // for better readability fallback chains are stored in a string separated with "|" character.
+      // We have a fallback chain for this country, for better readability
+      // fallback chains are stored in a string separated with "|" character.
+      $chains[$lang][$country] = explode("|", $chain);
     }
     elseif ($country == LANGUAGE_FALLBACK_ALL_COUNTRIES) {
-      // We don't have a fallback chain for all countries
+      // We don't have a fallback chain for all countries.
       $chains[$lang][$country] = array();
     }
     elseif ($strict) {
@@ -132,8 +133,8 @@ function language_fallback_get_chain($lang, $country = FALSE, $strict = FALSE) {
       return array();
     }
     else {
-      // We dno't have fallback so we try default fallback for all countries
-      // WARNING! Recurency!
+      // We dno't have fallback so we try default fallback for all
+      // countries. WARNING! Recurency!
       $chains[$lang][$country] = language_fallback_get_chain($lang, LANGUAGE_FALLBACK_ALL_COUNTRIES);
     }
   }
@@ -156,7 +157,7 @@ function language_fallback_get_user_chain() {
 }
 
 /**
- * Sets user defined fallback chain for CURRENT user.
+ * Sets user defined fallback chain for current user.
  *
  * User fallback chain is stored in a session variable.
  * Empty chain will unset user session variable.
@@ -176,7 +177,8 @@ function language_fallback_set_user_chain($chain = NULL) {
  * Gets country code for fallback check.
  *
  * @return string
- *   Either country code for fallback chain lookup or empty string if no country is specified for current visitor.
+ *   Either country code for fallback chain lookup or an empty string if
+ *   no country is specified for current visitor.
  */
 function language_fallback_get_country() {
   // Check if country is stored in a session variable
@@ -193,10 +195,9 @@ function language_fallback_get_country() {
     else {
       $_SESSION['language_fallback']['country'] = LANGUAGE_FALLBACK_ALL_COUNTRIES;
     }
-
-    // We store country in a asession variable only if it is really needed.
   }
 
+  // We store country in a a session variable only if it is really needed.
   if (isset($_SESSION['language_fallback']['country'])) {
     return $_SESSION['language_fallback']['country'];
   }
