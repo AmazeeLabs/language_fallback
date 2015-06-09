@@ -4,12 +4,9 @@
  * @file
  * Provide language fallbacks for languages.
  */
+
 define('LANGUAGE_FALLBACK_ALL_COUNTRIES', 'all');
 
-/**
- * Administration forms are moved the separate file for better readability.
- * The same goes for blocks.
- */
 module_load_include('inc', 'language_fallback', 'language_fallback.admin');
 module_load_include('inc', 'language_fallback', 'language_fallback.block');
 module_load_include('inc', 'language_fallback', 'language_fallback.i18n');
@@ -27,7 +24,7 @@ function language_fallback_menu() {
     'page arguments' => array('language_fallback_settings_form'),
     'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
-    'file' => 'language_fallback.settings.inc'
+    'file' => 'language_fallback.settings.inc',
   );
 
   return $items;
@@ -37,13 +34,10 @@ function language_fallback_menu() {
  * Implements Drupal hook_language_fallback_candidates_alter().
  *
  * This function provides fallback features for entities.
- *
- * @param $fallback_candidates array
- *   An array of language codes whose order will determine the language fallback order.
  */
 function language_fallback_language_fallback_candidates_alter(array &$fallback_candidates) {
 
-  // Check if entity fallback is enabled
+  // Check if entity fallback is enabled.
   if (!variable_get('language_fallback_entity', FALSE)) {
     return;
   }
@@ -55,7 +49,7 @@ function language_fallback_language_fallback_candidates_alter(array &$fallback_c
     return;
   }
 
-  // Get fallback chain for current language
+  // Get fallback chain for current language.
   $fallbacks = language_fallback_get_chain($language->language);
 
   if (count($fallbacks) > 0) {
@@ -75,7 +69,8 @@ function language_fallback_language_fallback_candidates_alter(array &$fallback_c
 /**
  * Gets fallback chain for specified language.
  *
- * If you want to hook up to language fallback module - this is the place to start.
+ * If you want to hook up to language fallback module
+ * this is the place to start.
  *
  * @param string $lang
  *   Language code for which fallback chain is needed.
@@ -83,6 +78,7 @@ function language_fallback_language_fallback_candidates_alter(array &$fallback_c
  *   Country code for which fallback chain is needed.
  * @param bool $strict
  *   Used only internally.
+ *
  * @return array
  *   Array of languages or an empty array if no fallback is defined.
  */
@@ -146,7 +142,8 @@ function language_fallback_get_chain($lang, $country = FALSE, $strict = FALSE) {
  * Gets user defined fallback chain if it exists.
  *
  * @return array
- *   User defined fallback chain or an empty array if user defined chain does not exists.
+ *   User defined fallback chain or an empty array if user defined chain
+ *   does not exists.
  */
 function language_fallback_get_user_chain() {
   if (isset($_SESSION['language_fallback']['user_chain']) && is_array($_SESSION['language_fallback']['user_chain']) && count($_SESSION['language_fallback']['user_chain']) > 0) {
@@ -162,9 +159,10 @@ function language_fallback_get_user_chain() {
  * User fallback chain is stored in a session variable.
  * Empty chain will unset user session variable.
  *
- * @param $chain array
+ * @param array $chain
+ *   Array of fallback languages.
  */
-function language_fallback_set_user_chain($chain = NULL) {
+function language_fallback_set_user_chain(array $chain = NULL) {
   if (empty($chain)) {
     unset($_SESSION['language_fallback']['user_chain']);
   }
@@ -181,13 +179,13 @@ function language_fallback_set_user_chain($chain = NULL) {
  *   no country is specified for current visitor.
  */
 function language_fallback_get_country() {
-  // Check if country is stored in a session variable
+  // Check if country is stored in a session variable.
   if (isset($_SESSION['language_fallback']['country'])) {
     return $_SESSION['language_fallback']['country'];
   }
   elseif (function_exists('smart_ip_get_location')) {
 
-    // Use smart IP to get user location
+    // Use smart IP to get user location.
     $country = smart_ip_get_location(ip_address());
     if ($country !== FALSE) {
       $_SESSION['language_fallback']['country'] = strtoupper($country['country_code']);
@@ -209,6 +207,7 @@ function language_fallback_get_country() {
  * Sets country code for current user.
  *
  * @param string $country
+ *   Country ISO code.
  */
 function language_fallback_set_country($country = FALSE) {
   if (!$country) {
@@ -226,7 +225,7 @@ function language_fallback_set_country($country = FALSE) {
  */
 function language_fallback_get_countries() {
   $ret = array(
-    LANGUAGE_FALLBACK_ALL_COUNTRIES => t('All countries')
+    LANGUAGE_FALLBACK_ALL_COUNTRIES => t('All countries'),
   );
 
   if (variable_get('language_fallback_country', FALSE)) {
