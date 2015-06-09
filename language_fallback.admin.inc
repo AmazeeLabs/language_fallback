@@ -7,17 +7,17 @@
 /**
  * Implements hook_form_FORM_ID_alter().
  *
- * This is the place where user can set up language fallback for existing or new languages.
+ * Setup language fallback for existing or new languages.
  */
 function language_fallback_form_locale_languages_edit_form_alter(&$form, &$form_state, $form_id) {
-  // There was a trouble making AJAX to work on "add language" form so it has been disabled.
+  // Make AJAX to work on "add language" form.
   $langcode = isset($form['langcode_view']) ? $form['langcode']['#value'] : NULL;
 
   // Add select to create/edit form.
   $key = $form_id == 'locale_languages_predefined_form' ? 'language list' : 'custom language';
   $form['_key_'] = array(
     '#type' => 'value',
-    '#value' => $key
+    '#value' => $key,
   );
 
   $form[$key]['fallback'] = array(
@@ -34,7 +34,7 @@ function language_fallback_form_locale_languages_edit_form_alter(&$form, &$form_
     $form_state[$key]['fallback']['countries'] = array(LANGUAGE_FALLBACK_ALL_COUNTRIES);
 
     if ($langcode) {
-      // Get all countries that we have a fallback for this language
+      // Get all countries that we have a fallback for this language.
       $result = db_select('language_fallback', 'f')
           ->fields('f', array('country'))
           ->condition('language', $langcode, '=')
@@ -49,14 +49,14 @@ function language_fallback_form_locale_languages_edit_form_alter(&$form, &$form_
   foreach ($form_state[$key]['fallback']['countries'] as $country) {
     language_fallback_get_fallback_form($form, $form_state, $key, $country, $countries[$country]);
 
-    // Unset countries that are in use
+    // Unset countries that are in use.
     unset($countries[$country]);
   }
 
   if (count($countries) > 0) {
     $form[$key]['fallback']['country'] = array(
       '#type' => 'select',
-      '#options' => $countries
+      '#options' => $countries,
     );
 
     $form[$key]['fallback']['add_country'] = array(
@@ -80,7 +80,7 @@ function language_fallback_get_fallback_form(&$form, &$form_state, $key, $ccode 
   $options = &drupal_static(__FUNCTION__);
   $langcode = isset($form['langcode_view']) ? $form['langcode']['#value'] : NULL;
   if (!$options) {
-    // Cache the language options as this function may get called multiple times per page load.
+    // Cache the language options.
     $default_lang = language_default();
     $languages = language_list();
     $options = locale_language_list();
@@ -106,9 +106,10 @@ function language_fallback_get_fallback_form(&$form, &$form_state, $key, $ccode 
   $form[$key]['fallback'][$ccode] = array(
     '#type' => 'fieldset',
     '#title' => check_plain($country),
-    '#prefix' => '<div id="country-' . $ccode . '-fieldset-wrapper">', // This is unique to each country fallback chain
+    '#prefix' => '<div id="country-' . $ccode . '-fieldset-wrapper">',
+  // This is unique to each country fallback chain.
     '#suffix' => '</div>',
-    '#description' => $description
+    '#description' => $description,
   );
 
   $chain = ($langcode ? language_fallback_get_chain($langcode, $ccode, ($scope == 'admin')) : array());
@@ -136,10 +137,13 @@ function language_fallback_get_fallback_form(&$form, &$form_state, $key, $ccode 
   $form[$key]['fallback'][$ccode]['add'] = array(
     '#type' => 'submit',
     '#value' => ($country ? t('Add another language for !country', array('!country' => $country)) : t('Add another language')),
-    '#submit' => array('language_fallback_country_add_language_add_another'), // This is shared across all countries
+    '#submit' => array('language_fallback_country_add_language_add_another'),
+  // This is shared across all countries.
     '#ajax' => array(
-      'callback' => 'language_fallback_country_add_language_ajax_callback', // This is shared across all countries
-      'wrapper' => 'country-' . $ccode . '-fieldset-wrapper', // This is unique to each country fallback chain
+      'callback' => 'language_fallback_country_add_language_ajax_callback',
+  // This is shared across all countries.
+      'wrapper' => 'country-' . $ccode . '-fieldset-wrapper',
+  // This is unique to each country fallback chain.
     ),
   );
 
@@ -147,10 +151,13 @@ function language_fallback_get_fallback_form(&$form, &$form_state, $key, $ccode 
     $form[$key]['fallback'][$ccode]['remove_one'] = array(
       '#type' => 'submit',
       '#value' => ($country ? t('Remove last language for !country', array('!country' => $country)) : t('Remove last language')),
-      '#submit' => array('language_fallback_country_remove_last_submit'), // This is shared across all countries
+      '#submit' => array('language_fallback_country_remove_last_submit'),
+    // This is shared across all countries.
       '#ajax' => array(
-        'callback' => 'language_fallback_country_add_language_ajax_callback', // This is shared across all countries
-        'wrapper' => 'country-' . $ccode . '-fieldset-wrapper', // This is unique to each country fallback chain
+        'callback' => 'language_fallback_country_add_language_ajax_callback',
+    // This is shared across all countries.
+        'wrapper' => 'country-' . $ccode . '-fieldset-wrapper',
+    // This is unique to each country fallback chain.
       ),
     );
   }
@@ -159,9 +166,11 @@ function language_fallback_get_fallback_form(&$form, &$form_state, $key, $ccode 
     $form[$key]['fallback'][$ccode]['remove'] = array(
       '#type' => 'submit',
       '#value' => t('Remove fallback chain for !country', array('!country' => $country)),
-      '#submit' => array('language_fallback_country_remove_chain'), // This is shared across all countries
+      '#submit' => array('language_fallback_country_remove_chain'),
+    // This is shared across all countries.
       '#ajax' => array(
-        'callback' => 'language_fallback_country_add_remove_ajax_callback', // This is shared across all countries
+        'callback' => 'language_fallback_country_add_remove_ajax_callback',
+    // This is shared across all countries.
         'wrapper' => 'countries-fieldset-wrapper',
       ),
     );
@@ -173,10 +182,10 @@ function language_fallback_get_fallback_form(&$form, &$form_state, $key, $ccode 
  */
 function language_fallback_country_remove_chain($form, &$form_state) {
   $key = $form_state['values']['_key_'];
-  // Country to remove
+  // Country to remove.
   $remove = $form_state['triggering_element']['#parents'][1];
   if (($index = array_search($remove, $form_state[$key]['fallback']['countries'])) !== FALSE) {
-    // Remove country
+    // Remove country.
     unset($form_state[$key]['fallback']['countries'][$index]);
   }
   $form_state['rebuild'] = TRUE;
@@ -200,7 +209,7 @@ function language_fallback_country_add_another($form, &$form_state) {
 }
 
 /**
- * Callback function for ajax calls that add language select element to the country fieldset.
+ * Callback function for ajax calls for select element to the country.
  */
 function language_fallback_country_add_language_ajax_callback($form, $form_state) {
   $key = $form_state['values']['_key_'];
@@ -217,14 +226,15 @@ function language_fallback_country_add_language_ajax_callback($form, $form_state
 /**
  * Ajax submit function for "Remove last language from ..." button.
  *
- * See function language_fallback_country_add_language_add_another() for details.
+ * @see language_fallback_country_add_language_add_another()
  */
 function language_fallback_country_remove_last_submit($form, &$form_state) {
   $key = $form_state['values']['_key_'];
-  // See function language_fallback_country_add_language_add_another() for details.
+
+  // @see function language_fallback_country_add_language_add_another().
   $id = count($form_state['triggering_element']['#parents']) - 2;
   $country = $form_state['triggering_element']['#parents'][$id];
-  $form_state[$key]['fallback'][$country]['chain_length'] --;
+  $form_state[$key]['fallback'][$country]['chain_length']--;
 
   $form_state['rebuild'] = TRUE;
 }
@@ -245,11 +255,12 @@ function language_fallback_country_add_language_add_another($form, &$form_state)
    *  1 => [COUNTRY],
    *  2 => 'add'
    * );
-   * So we need the '1' index to know wchich country needs another select element.
+   * So we need the '1' index to know wchich country needs another
+   * select element.
    */
   $id = count($form_state['triggering_element']['#parents']) - 2;
   $country = $form_state['triggering_element']['#parents'][$id];
-  $form_state[$key]['fallback'][$country]['chain_length'] ++;
+  $form_state[$key]['fallback'][$country]['chain_length']++;
 
   $form_state['rebuild'] = TRUE;
 }
@@ -272,17 +283,17 @@ function language_fallback_country_add_language_submit($form, &$form_state) {
       continue;
     }
 
-    // Fix fallback array
+    // Fix fallback array.
     $fixed = language_fallback_fix_chain($fallback, $language);
 
     if (count($fixed) > 0) {
-      // This stores our settings
+      // This stores our settings.
       db_insert('language_fallback')
         ->fields(
           array(
             'language' => $language,
             'country' => $country,
-            'chain' => implode('|', $fixed)
+            'chain' => implode('|', $fixed),
           )
         )
         ->execute();
@@ -291,7 +302,7 @@ function language_fallback_country_add_language_submit($form, &$form_state) {
   }
 
   if ($set_variable) {
-    // This tells drupal to use our fallback mechanism for string translation
+    // This tells drupal to use our fallback mechanism for string translation.
     variable_set('locale_custom_strings_' . $language, new localeWithFallback($language));
   }
 }
@@ -300,17 +311,21 @@ function language_fallback_country_add_language_submit($form, &$form_state) {
  * Sanitize fallback chain to remove duplicates and default language.
  *
  * @param array $fallback
+ *   Array of fallback languages.
  * @param string $language
- * @return array clean fallback array.
+ *   Language code.
+ *
+ * @return array
+ *   Clean fallback array.
  */
-function language_fallback_fix_chain($fallback, $language = LANGUAGE_NONE) {
+function language_fallback_fix_chain(array $fallback, $language = LANGUAGE_NONE) {
   $valid = &drupal_static(__FUNCTION__);
 
   if (empty($valid)) {
     $valid = locale_language_list();
   }
 
-  // Fix fallback array
+  // Fix fallback array.
   $fixed = array();
   foreach ($fallback as $id => $lang) {
     // Accept only valid languages.
