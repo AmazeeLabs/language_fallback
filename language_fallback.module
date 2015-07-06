@@ -9,7 +9,9 @@ define('LANGUAGE_FALLBACK_ALL_COUNTRIES', 'all');
 
 module_load_include('inc', 'language_fallback', 'language_fallback.admin');
 module_load_include('inc', 'language_fallback', 'language_fallback.block');
-module_load_include('inc', 'language_fallback', 'language_fallback.i18n');
+if (module_exists('i18n_string')) {
+  module_load_include('inc', 'language_fallback', 'language_fallback.i18n');
+}
 
 /**
  * Implements hook_menu().
