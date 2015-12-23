@@ -24,12 +24,25 @@ function language_fallback_menu() {
     'description' => 'Configuration for Language fallback module',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('language_fallback_settings_form'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('administer language fallback'),
     'type' => MENU_NORMAL_ITEM,
     'file' => 'language_fallback.settings.inc',
   );
 
   return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function language_fallback_permission() {
+  return array(
+    'administer language fallback' => array(
+      'title' => t('Administer language fallback'),
+      'description' => t('Access the language fallback configuration page.'),
+      'restrict access' => TRUE,
+    ),
+  );
 }
 
 /**
