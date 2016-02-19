@@ -24,14 +24,16 @@ function language_fallback_field_views_data_alter(&$result, &$field, &$module) {
   }
 
   // This is a fix for core's field:language
-  foreach ($result as &$f) {
-    if (isset($f['language'])) {
-      if (isset($f['language']['filter'])) {
-        $f['language']['filter']['handler'] = 'views_handler_filter_locale_language_with_fallback';
-      }
+  if (is_array($result) && $result) {
+    foreach ($result as &$f) {
+      if (isset($f['language'])) {
+        if (isset($f['language']['filter'])) {
+          $f['language']['filter']['handler'] = 'views_handler_filter_locale_language_with_fallback';
+        }
 
-      if (isset($f['language']['sort'])) {
-        $f['language']['sort']['handler'] = 'views_handler_sort_fallback_chain';
+        if (isset($f['language']['sort'])) {
+          $f['language']['sort']['handler'] = 'views_handler_sort_fallback_chain';
+        }
       }
     }
   }
